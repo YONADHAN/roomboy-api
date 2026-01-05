@@ -14,9 +14,23 @@ import { Request, Response } from 'express'
 const app = express()
 
 // Middlewares
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://roomboy-admin.vercel.app',
+  'https://roomboy-public.vercel.app',
+]
+
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true) // allow server-to-server
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
     credentials: true,
   })
 )
