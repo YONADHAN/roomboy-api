@@ -10,7 +10,7 @@ import propertyRoutes from '@/routes/property.routes.js'
 import publicPropertyRoutes from '@/routes/public-property.routes.js'
 import publicLocationRoutes from '@/routes/public-location.routes.js'
 import { errorMiddleware } from './middlewares/error.middleware.js'
-
+import { Request, Response } from 'express'
 const app = express()
 
 // Middlewares
@@ -32,7 +32,7 @@ app.use('/api/v1/admin/properties', propertyRoutes)
 app.use('/api/v1/public', publicPropertyRoutes)
 app.use('/api/v1/public/locations', publicLocationRoutes)
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'OK', message: 'Room app API running' })
 })
 
