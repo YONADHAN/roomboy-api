@@ -13,6 +13,8 @@ import { errorMiddleware } from './middlewares/error.middleware.js'
 import { Request, Response } from 'express'
 const app = express()
 
+app.set('trust proxy', 1) // 🔥 REQUIRED for Render/Vercel (secure cookies)
+
 // Middlewares
 const allowedOrigins = [
   'http://localhost:5173',
