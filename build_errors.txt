@@ -1,0 +1,7 @@
+
+> api@1.0.0 build
+> tsc && tsc-alias
+
+src/models/field-definition.model.ts(58,5): error TS2353: Object literal may only specify known properties, and 'isDeleted' does not exist in type '{ _id?: SchemaDefinitionProperty<ObjectId, IFieldDefinition, Document<unknown, {}, IFieldDefinition, { id: string; }, ResolveSchemaOptions<DefaultSchemaOptions>> & Omit<...> & { ...; }> | undefined; ... 8 more ...; rules?: SchemaDefinitionProperty<...> | undefined; }'.
+src/services/property.service.ts(17,60): error TS2345: Argument of type 'Record<string, any> | undefined' is not assignable to parameter of type 'Record<string, any>'.
+  Type 'undefined' is not assignable to type 'Record<string, any>'.

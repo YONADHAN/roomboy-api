@@ -1,64 +1,146 @@
-import { PropertyModel, IProperty } from '@/models/property.model.js'
+import { PropertyModel, IPropertyBase } from '@/models/property.model.js'
 import { FieldDefinitionModel, IFieldDefinition } from '@/models/field-definition.model.js'
 import { PublicPropertyQueryDTO } from '@/validations/public-property.validation.js'
 
+export interface IPublicProperty extends Omit<IPropertyBase, 'location'> {
+    price: number
+    mainImage: string
+    location: {
+        city: string
+        address: string
+    }
+}
+
 export class PublicPropertyRepository {
-    async findById(id: string): Promise<IProperty | null> {
-        return await PropertyModel.findOne({
+    async findById(id: string): Promise<IPublicProperty | null> {
+        const property = await PropertyModel.findOne({
             _id: id,
             status: 'active',
             isDeleted: false,
         }).lean()
+
+        if (!property) return null
+
+        return {
+            ...property,
+            price: property.attributes?.price || property.attributes?.rent || 0,
+            location: {
+                city: property.address?.city || '',
+                address: property.address?.street || '',
+            },
+            mainImage: property.images?.[0] || '',
+        }
     }
 
-    async findBySlug(slug: string): Promise<IProperty | null> {
+    async findBySlug(slug: string): Promise<IPublicProperty | null> {
         // Assuming slug is stored in attributes or we need to generate it from title
         // For now, we'll search by propertyId as slug
-        return await PropertyModel.findOne({
+        const property = await PropertyModel.findOne({
             propertyId: slug,
             status: 'active',
             isDeleted: false,
         }).lean()
+
+        if (!property) return null
+
+        return {
+            ...property,
+            price: property.attributes?.price || property.attributes?.rent || 0,
+            location: {
+                city: property.address?.city || '',
+                address: property.address?.street || '',
+            },
+            mainImage: property.images?.[0] || '',
+        }
     }
 
     async findAll(query: PublicPropertyQueryDTO, dynamicFilters: Record<string, any> = {}) {
-        const { city, locality, search, page, limit } = query
+        const { search, page, limit } = query
+        const locationSlug = query.location
 
         const filter: Record<string, unknown> = {
             status: 'active',
-            isDeleted: false,
+            isDeleted: { $ne: true },
         }
 
-        if (city) {
-            filter['location.city'] = city
-        }
-
-        if (locality) {
-            filter['location.locality'] = locality
-        }
-
+        // 1. Search Logic ($or regex)
         if (search) {
-            filter.$text = { $search: search }
+            const searchRegex = { $regex: search, $options: 'i' }
+            filter.$or = [
+                { title: searchRegex },
+                { 'address.city': searchRegex },
+                { 'address.locality': searchRegex }
+            ]
         }
 
-        // Apply dynamic attribute filters
-        // Example: monthly_rent_min=10000 becomes attributes.monthly_rent: { $gte: 10000 }
+        // 2. Location Logic (ID Lookup + Text Split & Match)
+        if (locationSlug || dynamicFilters.locationId) {
+            const locOrConditions: Record<string, any>[] = []
+
+            // A. ID Match (Primary)
+            if (dynamicFilters.locationId) {
+                locOrConditions.push({ location: dynamicFilters.locationId })
+                delete dynamicFilters.locationId // Clean up
+            }
+
+            // B. Text Match (Fallback / Broad)
+            if (locationSlug) {
+                // e.g. "kakkanad-kochi" -> "kakkanad", "kochi"
+                const parts = locationSlug.split('-').filter(Boolean)
+                if (parts.length > 0) {
+                    const locationRegex = { $regex: parts.join('|'), $options: 'i' }
+                    locOrConditions.push({ 'address.city': locationRegex })
+                    locOrConditions.push({ 'address.locality': locationRegex })
+                }
+            }
+
+            if (locOrConditions.length > 0) {
+                const locQuery = { $or: locOrConditions }
+
+                // Combine with existing $or from search if present, using $and
+                if (filter.$or) {
+                    filter.$and = [locQuery]
+                } else {
+                    Object.assign(filter, locQuery)
+                }
+            }
+        }
+
+        // 3. Price Filter (min_rent / max_rent)
+        // These come from dynamicFilters usually, or we should extract them explicitly if passed in query
+        if (dynamicFilters.min_rent || dynamicFilters.max_rent) {
+            const priceQuery: Record<string, number> = {}
+            if (dynamicFilters.min_rent) priceQuery.$gte = Number(dynamicFilters.min_rent)
+            if (dynamicFilters.max_rent) priceQuery.$lte = Number(dynamicFilters.max_rent)
+
+            filter['attributes.monthly_rent'] = priceQuery
+
+            // Clean up from dynamic to avoid double processing
+            delete dynamicFilters.min_rent
+            delete dynamicFilters.max_rent
+        }
+
+        // 4. Array Fields & Other Attributes
         for (const [key, value] of Object.entries(dynamicFilters)) {
-            if (key.endsWith('_min')) {
-                const fieldKey = key.replace('_min', '')
-                filter[`attributes.${fieldKey}`] = {
-                    ...((filter[`attributes.${fieldKey}`] as any) || {}),
-                    $gte: Number(value)
-                }
-            } else if (key.endsWith('_max')) {
-                const fieldKey = key.replace('_max', '')
-                filter[`attributes.${fieldKey}`] = {
-                    ...((filter[`attributes.${fieldKey}`] as any) || {}),
-                    $lte: Number(value)
-                }
+            // Skip if value is undefined/empty
+            if (value === undefined || value === '') continue
+
+            if (key === 'preferred_tenants') {
+                // Ensure value is array
+                const tenants = Array.isArray(value) ? value : [value]
+                filter['attributes.preferred_tenants'] = { $in: tenants }
+            } else if (key === 'amenities') {
+                // Amenities: { $all: values }
+                const amenityList = Array.isArray(value) ? value : [value]
+                filter['attributes.amenities'] = { $all: amenityList }
             } else {
-                // Exact match for other dynamic attributes
-                filter[`attributes.${key}`] = value
+                // Exact match for others (property_type, room_type, furnishing_status)
+                // If array passed, use $in, otherwise exact
+                if (Array.isArray(value)) {
+                    filter[`attributes.${key}`] = { $in: value }
+                } else {
+                    filter[`attributes.${key}`] = value
+                }
             }
         }
 
@@ -74,11 +156,19 @@ export class PublicPropertyRepository {
         ])
 
         return {
-            data,
-            pagination: {
-                page,
-                limit,
+            data: data.map(item => ({
+                ...item,
+                price: item.attributes?.monthly_rent || 0, // Ensure mapping is correct per requirement
+                location: {
+                    city: item.address?.city || '',
+                    address: item.address?.locality || '', // Mapping locality to address field in response
+                },
+                mainImage: item.images?.[0] || '',
+            })) as IPublicProperty[],
+            meta: { // Changed from pagination to meta as per "API Response (LOCKED)"
                 total,
+                page: Number(page),
+                limit: Number(limit),
                 totalPages: Math.ceil(total / limit),
             },
         }

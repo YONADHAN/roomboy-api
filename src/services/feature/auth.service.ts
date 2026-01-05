@@ -89,4 +89,26 @@ export class AuthService {
 
     return { success: true }
   }
+
+  async changePassword(userId: string, data: { current: string; new: string }) {
+    const user = await userRepo.findById(userId)
+    if (!user) {
+      throw new Error('User not found')
+    }
+
+    const isMatch = await bcrypt.compare(data.current, user.password)
+    if (!isMatch) {
+      throw new InvalidCredentialsError()
+    }
+
+    if (data.current === data.new) {
+      throw new Error('New password cannot be the same as the current password')
+    }
+
+    const hashedPassword = await bcrypt.hash(data.new, 10)
+    user.password = hashedPassword
+    await user.save()
+
+    return { success: true }
+  }
 }

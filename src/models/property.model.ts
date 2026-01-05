@@ -1,22 +1,29 @@
 import { Schema, model, Document } from 'mongoose'
 import { randomUUID } from 'crypto'
 
-export interface IProperty extends Document {
+export interface IPropertyBase {
   propertyId: string
   title: string
   entityType: 'property'
   attributes: Record<string, any>
-  location?: {
+  location: any // ObjectId
+  address: {
+    street?: string
     city?: string
     locality?: string
-    latitude?: number
-    longitude?: number
+  }
+  coordinates: {
+    lat: number
+    lng: number
   }
   images: string[]
   status: 'active' | 'blocked' | 'pending'
   isDeleted: boolean
   createdAt: Date
+  updatedAt: Date
 }
+
+export interface IProperty extends IPropertyBase, Document { }
 
 const PropertySchema = new Schema<IProperty>(
   {
@@ -39,10 +46,18 @@ const PropertySchema = new Schema<IProperty>(
       default: {},
     },
     location: {
-      city: String,
+      type: Schema.Types.ObjectId,
+      ref: 'Location',
+      required: true,
+    },
+    address: {
+      street: String,
+      city: String, // Cached for easier display if needed
       locality: String,
-      latitude: Number,
-      longitude: Number,
+    },
+    coordinates: {
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
     },
     images: {
       type: [String],
@@ -63,8 +78,8 @@ const PropertySchema = new Schema<IProperty>(
 
 PropertySchema.index({
   title: 'text',
-  'location.city': 1,
-  'location.locality': 1,
+  'address.city': 1,
+  'address.locality': 1,
 })
 
 export const PropertyModel = model<IProperty>('Property', PropertySchema)

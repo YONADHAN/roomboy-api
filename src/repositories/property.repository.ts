@@ -35,6 +35,7 @@ export class PropertyRepository {
 
         const [data, total] = await Promise.all([
             PropertyModel.find(filter)
+                .populate('location', 'name city slug')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)

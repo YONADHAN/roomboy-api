@@ -14,7 +14,7 @@ export class PropertyService {
 
     async create(data: CreatePropertyDTO): Promise<IProperty> {
         // Validate dynamic attributes using DynamicAttributeValidationService
-        await this.attributeValidator.validate('property', data.attributes)
+        await this.attributeValidator.validate('property', data.attributes || {})
 
         return await this.repository.create(data)
     }

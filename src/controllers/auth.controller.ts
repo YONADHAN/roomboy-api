@@ -41,4 +41,24 @@ export class AuthController {
 
     res.status(200).json({ success: true, message: 'Logged out successfully' })
   }
+
+  async changePassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { currentPassword, newPassword } = req.body
+      const userId = (req as any).user?.userId
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' })
+      }
+
+      await authService.changePassword(userId, {
+        current: currentPassword,
+        new: newPassword,
+      })
+
+      res.status(200).json({ success: true, message: 'Password changed successfully' })
+    } catch (error) {
+      next(error)
+    }
+  }
 }

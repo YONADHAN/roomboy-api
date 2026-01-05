@@ -39,4 +39,9 @@ export class FieldDefinitionController {
         const fieldDefinition = await fieldDefinitionService.toggleStatus(req.params.id)
         res.json(fieldDefinition)
     }
+
+    async delete(req: Request, res: Response) {
+        await fieldDefinitionService.delete(req.params.id)
+        res.json({ message: 'Field definition deleted successfully' })
+    }
 }

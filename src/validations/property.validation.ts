@@ -1,33 +1,23 @@
 import { z } from 'zod'
 
 export const CreatePropertySchema = z.object({
-    title: z.string().min(2, 'Title must be at least 2 characters'),
-    attributes: z.record(z.string(), z.any()).default({}),
-    location: z
-        .object({
-            city: z.string().optional(),
-            locality: z.string().optional(),
-            latitude: z.number().optional(),
-            longitude: z.number().optional(),
-        })
-        .optional(),
-    images: z.array(z.string().url('Each image must be a valid URL')).default([]),
-    status: z.enum(['active', 'blocked', 'pending']).default('pending'),
+    title: z.string().min(3),
+    status: z.enum(['active', 'blocked', 'pending']).optional(),
+    location: z.string(), // ObjectId as string from frontend
+    address: z.object({
+        street: z.string().optional(),
+        city: z.string().optional(),
+        locality: z.string().optional(),
+    }),
+    coordinates: z.object({
+        lat: z.number(),
+        lng: z.number(),
+    }),
+    attributes: z.record(z.string(), z.any()).optional(),
+    images: z.array(z.string()).optional(),
 })
 
-export const UpdatePropertySchema = z.object({
-    title: z.string().min(2, 'Title must be at least 2 characters').optional(),
-    attributes: z.record(z.string(), z.any()).optional(),
-    location: z
-        .object({
-            city: z.string().optional(),
-            locality: z.string().optional(),
-            latitude: z.number().optional(),
-            longitude: z.number().optional(),
-        })
-        .optional(),
-    images: z.array(z.string().url('Each image must be a valid URL')).optional(),
-})
+export const UpdatePropertySchema = CreatePropertySchema.partial()
 
 export const PropertyQuerySchema = z.object({
     status: z.enum(['active', 'blocked', 'pending']).optional(),

@@ -3,6 +3,7 @@ import { z } from 'zod'
 // Public property list query with dynamic attribute filters
 export const PublicPropertyQuerySchema = z.object({
     city: z.string().optional(),
+    location: z.string().optional(), // Slug
     locality: z.string().optional(),
     search: z.string().optional(),
     page: z.coerce.number().min(1).default(1),

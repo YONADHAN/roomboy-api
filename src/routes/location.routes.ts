@@ -13,5 +13,6 @@ router.get('/', controller.list)
 router.get('/:id', controller.getById)
 router.put('/:id', controller.update)
 router.patch('/:id/toggle', controller.toggleStatus)
+router.delete('/:id', controller.delete)
 
 export default router

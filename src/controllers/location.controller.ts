@@ -37,4 +37,10 @@ export class LocationController {
     const location = await locationService.toggleStatus(req.params.id)
     res.json(location)
   }
+
+  async delete(req: Request, res: Response) {
+    const location = await locationService.delete(req.params.id)
+    if (!location) return res.status(404).json({ message: 'Not found' })
+    res.json({ message: 'Location deleted successfully' })
+  }
 }

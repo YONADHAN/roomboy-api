@@ -39,4 +39,8 @@ export class LocationService {
       isActive: !location.isActive,
     })
   }
+
+  async delete(id: string): Promise<ILocation | null> {
+    return await locationRepo.softDeleteLocation(id)
+  }
 }

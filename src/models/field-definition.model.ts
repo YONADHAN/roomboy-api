@@ -17,6 +17,7 @@ export interface IFieldDefinition extends Document {
   }
 
   isActive: boolean
+  isDeleted: boolean
   createdAt: Date
 }
 
@@ -54,6 +55,10 @@ const FieldDefinitionSchema = new Schema<IFieldDefinition>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

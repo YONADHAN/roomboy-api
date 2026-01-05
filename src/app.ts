@@ -8,6 +8,7 @@ import businessContactRoutes from '@/routes/business_contact.routes.js'
 import fieldDefinitionRoutes from '@/routes/field-definition.routes.js'
 import propertyRoutes from '@/routes/property.routes.js'
 import publicPropertyRoutes from '@/routes/public-property.routes.js'
+import publicLocationRoutes from '@/routes/public-location.routes.js'
 import { errorMiddleware } from './middlewares/error.middleware.js'
 
 const app = express()
@@ -29,6 +30,7 @@ app.use('/api/v1/admin/business-contacts', businessContactRoutes)
 app.use('/api/v1/admin/field-definitions', fieldDefinitionRoutes)
 app.use('/api/v1/admin/properties', propertyRoutes)
 app.use('/api/v1/public', publicPropertyRoutes)
+app.use('/api/v1/public/locations', publicLocationRoutes)
 // Health check
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', message: 'Room app API running' })

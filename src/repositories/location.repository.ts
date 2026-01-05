@@ -4,6 +4,8 @@ interface GetLocationsInput {
   page: number
   limit: number
   search?: string
+  isActive?: boolean
+  isDeleted?: boolean
 }
 
 interface GetLocationsOutput {
@@ -19,7 +21,7 @@ export class LocationRepository {
   }
 
   async getLocations(input: GetLocationsInput): Promise<GetLocationsOutput> {
-    const { page, limit, search } = input
+    const { page, limit, search, isActive, isDeleted } = input
     const skip = (page - 1) * limit
 
     const query: any = {}
@@ -29,6 +31,18 @@ export class LocationRepository {
         { name: { $regex: search, $options: 'i' } },
         { city: { $regex: search, $options: 'i' } },
       ]
+    }
+
+    if (isActive !== undefined) {
+      query.isActive = isActive
+    }
+
+    // Default filter: exclude deleted unless explicitly asked (or isDeleted filter is handled)
+    // If isDeleted is strictly provided, use it. Else default to false.
+    if (isDeleted !== undefined) {
+      query.isDeleted = isDeleted
+    } else {
+      query.isDeleted = { $ne: true }
     }
 
     const [data, totalCount] = await Promise.all([
@@ -47,10 +61,18 @@ export class LocationRepository {
     return await LocationModel.findById(id)
   }
 
+  async getLocationBySlug(slug: string): Promise<ILocation | null> {
+    return await LocationModel.findOne({ slug, isDeleted: { $ne: true } })
+  }
+
   async updateLocation(
     id: string,
     data: Partial<ILocation>
   ): Promise<ILocation | null> {
     return await LocationModel.findByIdAndUpdate(id, { $set: data }, { new: true })
+  }
+
+  async softDeleteLocation(id: string): Promise<ILocation | null> {
+    return await LocationModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true })
   }
 }

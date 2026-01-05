@@ -67,4 +67,12 @@ export class FieldDefinitionService {
         }
         return fieldDefinition
     }
+
+    async delete(id: string): Promise<IFieldDefinition> {
+        const fieldDefinition = await this.repository.softDelete(id)
+        if (!fieldDefinition) {
+            throw new Error('Field definition not found')
+        }
+        return fieldDefinition
+    }
 }

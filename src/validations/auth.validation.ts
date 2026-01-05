@@ -6,3 +6,10 @@ export const SignInSchema = z.object({
 })
 
 export type SignInDTO = z.infer<typeof SignInSchema>
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(6),
+  newPassword: z.string().min(6),
+})
+
+export type ChangePasswordDTO = z.infer<typeof ChangePasswordSchema>

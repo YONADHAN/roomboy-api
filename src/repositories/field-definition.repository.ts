@@ -24,6 +24,9 @@ export class FieldDefinitionRepository {
             filter.isActive = isActive
         }
 
+        // Default filter: exclude deleted
+        filter.isDeleted = { $ne: true }
+
         const skip = (page - 1) * limit
 
         const [data, total] = await Promise.all([
@@ -60,6 +63,10 @@ export class FieldDefinitionRepository {
 
         fieldDefinition.isActive = !fieldDefinition.isActive
         return await fieldDefinition.save()
+    }
+
+    async softDelete(id: string): Promise<IFieldDefinition | null> {
+        return await FieldDefinitionModel.findByIdAndUpdate(id, { isDeleted: true }, { new: true })
     }
 
     async existsByEntityTypeAndFieldKey(entityType: string, fieldKey: string): Promise<boolean> {
