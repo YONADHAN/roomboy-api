@@ -9,6 +9,7 @@ export interface AuthenticatedRequest extends Request {
     userId: string
     role: string
   }
+  cookies: any
 }
 
 export const authMiddleware = (
